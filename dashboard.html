@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NovaMind - Dashboard</title>
+  <link rel="stylesheet" href="css/global.css">
+  <link rel="stylesheet" href="css/pixel.css">
+  <link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-logo">🌌 NOVAMIND</div>
+    
+    <nav class="sidebar-nav">
+      <a href="dashboard.html" class="nav-link active">🏠 HOME</a>
+      <a href="quest.html" class="nav-link">⚔️ QUEST LOG</a>
+      <a href="notes.html" class="nav-link">📝 NOTES</a>
+      <a href="profile.html" class="nav-link">👤 PROFILE</a>
+    </nav>
+
+    <div class="sidebar-settings">
+      <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 8px;">THEME</div>
+      <div class="flex gap-md">
+        <button class="toggle-btn active" onclick="setTheme('dark')">🌙</button>
+        <button class="toggle-btn" onclick="setTheme('light')">☀️</button>
+      </div>
+      <button class="btn-pixel small" onclick="logout()">LOGOUT</button>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="main-content">
+    <div class="page-header">
+      <div class="page-title">🏠 DASHBOARD</div>
+    </div>
+
+    <!-- PLAYER HUD -->
+    <div class="player-hud">
+      <div class="avatar-pixel" id="avatarDisplay">🎮</div>
+      <div class="player-info">
+        <h3 id="playerName">-</h3>
+        <div class="level" id="playerLevel">LVL 1</div>
+      </div>
+      <div class="xp-section">
+        <div class="xp-bar-track">
+          <div class="xp-bar-fill" id="xpBar" style="width: 0%"></div>
+        </div>
+        <div class="xp-label" id="xpText">0 / 100 XP</div>
+      </div>
+      <div class="streak-badge" id="streakBadge">🔥 0 DAYS</div>
+    </div>
+
+    <!-- STAT CARDS -->
+    <div class="grid grid-4" style="margin-bottom: 40px;">
+      <div class="stat-card">
+        <div class="stat-icon">⚔️</div>
+        <div class="stat-value" id="questCount">0</div>
+        <div class="stat-label">Quest Aktif</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon">📝</div>
+        <div class="stat-value" id="noteCount">0</div>
+        <div class="stat-label">Catatan</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon">⏱️</div>
+        <div class="stat-value" id="studyTime">0h</div>
+        <div class="stat-label">Belajar (minggu)</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon">🏆</div>
+        <div class="stat-value" id="badgeCount">0</div>
+        <div class="stat-label">Badge</div>
+      </div>
+    </div>
+
+    <!-- RECENT QUESTS -->
+    <h3 style="margin-bottom: 16px;">⚔️ Quest Aktif Terbaru</h3>
+    <div class="quest-list" id="recentQuestsList">
+      <div style="text-align: center; padding: 20px; color: var(--text-muted);">
+        Tidak ada quest aktif. Buat yang baru di Quest Log! 🚀
+      </div>
+    </div>
+
+    <!-- MOTIVASI -->
+    <div style="margin-top: 40px; padding: 20px; background: var(--bg-card); border: 2px solid var(--border-pixel); border-radius: 2px; text-align: center;">
+      <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">💡 DAILY MOTIVATION</div>
+      <div id="motivationQuote" style="font-style: italic; color: var(--color-cyan); font-size: 14px;">Loading...</div>
+    </div>
+  </div>
+
+  <script src="js/storage.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    const QUOTES = [
+      "Belajar hari ini untuk mimpi yang lebih besar esok hari.",
+      "Setiap level baru butuh skill baru. Terus naik!",
+      "Kamu tidak perlu sempurna — kamu cukup konsisten.",
+      "Satu tugas selesai = satu langkah lebih dekat ke tujuan.",
+      "Orang sukses bukan yang paling pintar, tapi paling gigih.",
+      "Progress kecil tetap progress. Jangan berhenti.",
+      "Hari ini yang terbaik untuk memulai!",
+      "Kamu lebih kuat dari yang kamu kira."
+    ];
+
+    function initDashboard() {
+      if (!requireLogin()) return;
+
+      const user = getUser();
+      updateStreak();
+
+      // Update player info
+      document.getElementById('playerName').textContent = user.username;
+      document.getElementById('playerLevel').textContent = `LVL ${user.stats.level}`;
+      document.getElementById('streakBadge').textContent = `🔥 ${user.stats.streak} DAYS`;
+
+      // Update XP bar
+      const nextLevel = LEVEL_TABLE.find(l => l.level === user.stats.level + 1);
+      const xpPercent = (user.stats.xp / (nextLevel?.xpRequired || 100)) * 100;
+      document.getElementById('xpBar').style.width = xpPercent + '%';
+      document.getElementById('xpText').textContent = `${user.stats.xp} / ${nextLevel?.xpRequired || 100} XP`;
+
+      // Update stats
+      const quests = getActiveQuests(3);
+      const notes = getAllNotes();
+      document.getElementById('questCount').textContent = quests.length;
+      document.getElementById('noteCount').textContent = notes.length;
+      document.getElementById('badgeCount').textContent = user.badges.length;
+
+      // Calculate study time this week
+      const analytics = loadData(STORAGE_KEYS.ANALYTICS, {});
+      let weeklyTime = 0;
+      for (let i = 0; i < 7; i++) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        const dateStr = date.toISOString().split('T')[0];
+        if (analytics[dateStr]) {
+          weeklyTime += analytics[dateStr].totalMinutes;
+        }
+      }
+      document.getElementById('studyTime').textContent = (weeklyTime / 60).toFixed(1) + 'h';
+
+      // Display recent quests
+      const questList = document.getElementById('recentQuestsList');
+      if (quests.length > 0) {
+        questList.innerHTML = quests.map(q => `
+          <div class="quest-item">
+            <input type="checkbox" class="quest-checkbox checkbox-pixel" onchange="toggleCompleteQuest('${q.id}')">
+            <div class="quest-content">
+              <div class="quest-title">${q.title}</div>
+              <div class="quest-meta">
+                <span class="quest-badge">${q.priority.toUpperCase()}</span>
+                <span>${q.category}</span>
+                ${q.deadline ? `<span>📅 ${new Date(q.deadline).toLocaleDateString('id-ID')}</span>` : ''}
+              </div>
+            </div>
+            <div style="color: var(--color-purple); font-weight: bold;">+${q.xpReward} XP</div>
+          </div>
+        `).join('');
+      }
+
+      // Random quote
+      const quote = QUOTES[Math.floor(Math.random() * QUOTES.length)];
+      document.getElementById('motivationQuote').textContent = `"${quote}"`;
+
+      // Listen for level up
+      document.addEventListener('levelUp', (e) => {
+        alert(`🎉 LEVEL UP! You reached LVL ${e.detail.level}!`);
+        location.reload();
+      });
+    }
+
+    function toggleCompleteQuest(questId) {
+      completeQuest(questId);
+      setTimeout(() => location.reload(), 500);
+    }
+
+    function setTheme(theme) {
+      document.body.className = theme === 'light' ? 'light' : '';
+      const buttons = document.querySelectorAll('.toggle-btn');
+      buttons.forEach(b => b.classList.remove('active'));
+      if (theme === 'dark') buttons[0].classList.add('active');
+      else buttons[1].classList.add('active');
+    }
+
+    window.addEventListener('load', initDashboard);
+  </script>
+</body>
+</html>
