@@ -1,0 +1,133 @@
+/* ============================================
+   🌌 NOVAMIND V2 - GLOBAL DESIGN SYSTEM
+   Dark Space Retro Minigame Aesthetic
+   ============================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+
+:root {
+  --bg-base:      #0D0B1E;
+  --bg-card:      #1A1640;
+  --bg-elevated:  #252050;
+  --bg-input:     #1E1B3A;
+
+  --color-purple:  #A78BFA;
+  --color-cyan:    #06B6D4;
+  --color-pink:    #F472B6;
+  --color-amber:   #F59E0B;
+  --color-green:   #10B981;
+  --color-red:     #EF4444;
+  --color-blue:    #3B82F6;
+
+  --text-primary:   #E8E6F0;
+  --text-secondary: #9CA3AF;
+  --text-muted:     #4B5563;
+
+  --border-pixel:   #2D2B5E;
+  --border-glow:    #7C3AED;
+
+  --spacing-xs:  4px;
+  --spacing-sm:  8px;
+  --spacing-md:  12px;
+  --spacing-lg:  16px;
+  --spacing-xl:  24px;
+  --spacing-2xl: 32px;
+}
+
+body.light {
+  --bg-base:     #F0EEFF;
+  --bg-card:     #FFFFFF;
+  --bg-elevated: #EDE9FE;
+  --bg-input:    #F5F3FF;
+  --text-primary: #1E1B4B;
+  --text-secondary: #6B7280;
+  --text-muted:  #9CA3AF;
+  --border-pixel: #DDD6FE;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Nunito', sans-serif;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+.font-pixel {
+  font-family: 'Press Start 2P', monospace;
+  letter-spacing: 1px;
+  image-rendering: pixelated;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 800;
+  line-height: 1.3;
+  margin-bottom: var(--spacing-md);
+}
+
+h1 { font-size: 2.5rem; }
+h2 { font-size: 2rem; }
+h3 { font-size: 1.5rem; }
+
+input, textarea, select {
+  font-family: inherit;
+  font-size: 1rem;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border: 2px solid var(--border-pixel);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: 2px;
+  transition: border-color 0.2s;
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--border-glow);
+  box-shadow: 0 0 12px rgba(124, 58, 237, 0.2);
+}
+
+::-webkit-scrollbar { width: 10px; }
+::-webkit-scrollbar-track { background: var(--bg-base); }
+::-webkit-scrollbar-thumb { background: var(--color-purple); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-pink); }
+
+.container { max-width: 1200px; margin: 0 auto; padding: 0 var(--spacing-lg); }
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.align-center { align-items: center; }
+.gap-md { gap: var(--spacing-md); }
+.gap-lg { gap: var(--spacing-lg); }
+.text-center { text-align: center; }
+.text-muted { color: var(--text-muted); }
+.text-secondary { color: var(--text-secondary); }
+.text-purple { color: var(--color-purple); }
+.text-cyan { color: var(--color-cyan); }
+.text-pink { color: var(--color-pink); }
+.text-green { color: var(--color-green); }
+.text-red { color: var(--color-red); }
+.text-xs { font-size: 0.75rem; }
+.text-sm { font-size: 0.875rem; }
+.text-lg { font-size: 1.125rem; }
+.hidden { display: none !important; }
+
+a { color: var(--color-cyan); text-decoration: none; transition: color 0.2s; }
+a:hover { color: var(--color-pink); }
+
+@media (max-width: 768px) {
+  h1 { font-size: 1.8rem; }
+  h2 { font-size: 1.5rem; }
+  body { font-size: 14px; }
+}
