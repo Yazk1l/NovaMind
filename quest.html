@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NovaMind - Quest Log</title>
+  <link rel="stylesheet" href="css/global.css">
+  <link rel="stylesheet" href="css/pixel.css">
+  <link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+  <div class="sidebar">
+    <div class="sidebar-logo">🌌 NOVAMIND</div>
+    <nav class="sidebar-nav">
+      <a href="dashboard.html" class="nav-link">🏠 HOME</a>
+      <a href="quest.html" class="nav-link active">⚔️ QUEST LOG</a>
+      <a href="notes.html" class="nav-link">📝 NOTES</a>
+      <a href="profile.html" class="nav-link">👤 PROFILE</a>
+    </nav>
+    <div class="sidebar-settings">
+      <button class="btn-pixel small" onclick="logout()">LOGOUT</button>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="page-header">
+      <div class="page-title">⚔️ QUEST LOG</div>
+    </div>
+
+    <div style="display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;">
+      <button class="btn-pixel cyan" onclick="openQuestModal()">+ BUAT QUEST</button>
+      <input type="text" id="searchInput" placeholder="Cari quest..." style="flex: 1; min-width: 200px; padding: 8px; background: var(--bg-card); border: 2px solid var(--border-pixel); color: var(--text-primary); border-radius: 2px;">
+      <select id="filterCategory" style="padding: 8px; background: var(--bg-card); border: 2px solid var(--border-pixel); color: var(--text-primary);">
+        <option value="">Semua Kategori</option>
+        <option value="Matematika">Matematika</option>
+        <option value="Biologi">Biologi</option>
+        <option value="Fisika">Fisika</option>
+        <option value="Kimia">Kimia</option>
+        <option value="Bahasa">Bahasa</option>
+        <option value="Lainnya">Lainnya</option>
+      </select>
+    </div>
+
+    <div class="grid grid-3" style="margin-bottom: 20px;">
+      <div class="stat-card">
+        <div class="stat-value" id="totalQuests">0</div>
+        <div class="stat-label">Total Quest</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="activeQuests">0</div>
+        <div class="stat-label">Aktif</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="completedQuests">0</div>
+        <div class="stat-label">Selesai</div>
+      </div>
+    </div>
+
+    <div class="quest-list" id="questList">
+      <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+        Belum ada quest. Buat yang baru untuk mulai! 🚀
+      </div>
+    </div>
+  </div>
+
+  <div id="questModal" class="modal">
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeQuestModal()">&times;</button>
+      <h3 style="margin-bottom: 20px;">➕ BUAT QUEST BARU</h3>
+      <form onsubmit="handleCreateQuest(event)">
+        <div class="form-group">
+          <label class="form-label">JUDUL</label>
+          <input type="text" id="questTitle" class="form-input" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">KATEGORI</label>
+          <select id="questCategory" class="form-input" required>
+            <option value="Matematika">Matematika</option>
+            <option value="Biologi">Biologi</option>
+            <option value="Fisika">Fisika</option>
+            <option value="Kimia">Kimia</option>
+            <option value="Bahasa">Bahasa</option>
+            <option value="Lainnya">Lainnya</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">PRIORITAS</label>
+          <select id="questPriority" class="form-input" required>
+            <option value="low">🟢 RENDAH</option>
+            <option value="normal">🟡 NORMAL</option>
+            <option value="high">🔴 TINGGI</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">DEADLINE</label>
+          <input type="date" id="questDeadline" class="form-input">
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+          <button type="submit" class="btn-pixel green">✓ BUAT</button>
+          <button type="button" class="btn-pixel" onclick="closeQuestModal()">✗ BATAL</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/storage.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    function initQuestPage() {
+      if (!requireLogin()) return;
+      renderQuests(getAllQuests());
+      updateStats();
+    }
+
+    function renderQuests(quests) {
+      const list = document.getElementById('questList');
+      if (quests.length === 0) {
+        list.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-muted);">Belum ada quest. Buat yang baru! 🚀</div>';
+        return;
+      }
+
+      list.innerHTML = quests.map(q => `
+        <div class="quest-item ${q.completed ? 'completed' : ''}">
+          <input type="checkbox" class="quest-checkbox checkbox-pixel" ${q.completed ? 'checked' : ''} onchange="toggleQuest('${q.id}')">
+          <div class="quest-content">
+            <div class="quest-title" style="${q.completed ? 'text-decoration: line-through; opacity: 0.6;' : ''}">${q.title}</div>
+            <div class="quest-meta">
+              <span class="quest-badge">${q.priority.toUpperCase()}</span>
+              <span>${q.category}</span>
+              ${q.deadline ? `<span>📅 ${new Date(q.deadline).toLocaleDateString('id-ID')}</span>` : ''}
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <div style="color: var(--color-purple); font-weight: bold;">+${q.xpReward} XP</div>
+            <button class="btn-pixel small red" onclick="deleteQuestConfirm('${q.id}')">🗑️</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function toggleQuest(questId) {
+      const quest = getAllQuests().find(q => q.id === questId);
+      if (quest.completed) {
+        updateQuest(questId, { completed: false });
+      } else {
+        completeQuest(questId);
+      }
+      renderQuests(getAllQuests());
+      updateStats();
+    }
+
+    function deleteQuestConfirm(questId) {
+      if (confirm('Yakin ingin menghapus quest ini?')) {
+        deleteQuest(questId);
+        renderQuests(getAllQuests());
+        updateStats();
+      }
+    }
+
+    function updateStats() {
+      const allQuests = getAllQuests();
+      const activeQuests = allQuests.filter(q => !q.completed);
+      const completedQuests = allQuests.filter(q => q.completed);
+
+      document.getElementById('totalQuests').textContent = allQuests.length;
+      document.getElementById('activeQuests').textContent = activeQuests.length;
+      document.getElementById('completedQuests').textContent = completedQuests.length;
+    }
+
+    function openQuestModal() {
+      document.getElementById('questModal').classList.add('active');
+    }
+
+    function closeQuestModal() {
+      document.getElementById('questModal').classList.remove('active');
+    }
+
+    function handleCreateQuest(e) {
+      e.preventDefault();
+      const title = document.getElementById('questTitle').value;
+      const category = document.getElementById('questCategory').value;
+      const priority = document.getElementById('questPriority').value;
+      const deadline = document.getElementById('questDeadline').value || null;
+
+      const quest = createQuest(title, '', category, priority, deadline);
+      addQuest(quest);
+
+      closeQuestModal();
+      document.getElementById('questTitle').value = '';
+      renderQuests(getAllQuests());
+      updateStats();
+    }
+
+    document.getElementById('searchInput')?.addEventListener('input', (e) => {
+      const query = e.target.value.toLowerCase();
+      const quests = getAllQuests().filter(q => q.title.toLowerCase().includes(query));
+      renderQuests(quests);
+    });
+
+    document.getElementById('filterCategory')?.addEventListener('change', (e) => {
+      const category = e.target.value;
+      const quests = category ? getQuestsByCategory(category) : getAllQuests();
+      renderQuests(quests);
+    });
+
+    window.addEventListener('load', initQuestPage);
+  </script>
+</body>
+</html>
