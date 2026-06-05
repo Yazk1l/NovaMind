@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NovaMind - Notes</title>
+  <link rel="stylesheet" href="css/global.css">
+  <link rel="stylesheet" href="css/pixel.css">
+  <link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+  <div class="sidebar">
+    <div class="sidebar-logo">🌌 NOVAMIND</div>
+    <nav class="sidebar-nav">
+      <a href="dashboard.html" class="nav-link">🏠 HOME</a>
+      <a href="quest.html" class="nav-link">⚔️ QUEST LOG</a>
+      <a href="notes.html" class="nav-link active">📝 NOTES</a>
+      <a href="profile.html" class="nav-link">👤 PROFILE</a>
+    </nav>
+    <div class="sidebar-settings">
+      <button class="btn-pixel small" onclick="logout()">LOGOUT</button>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="page-header">
+      <div class="page-title">📝 NOTES</div>
+    </div>
+
+    <div style="display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;">
+      <button class="btn-pixel cyan" onclick="createNewNote()">+ BUAT CATATAN</button>
+      <input type="text" id="searchNotes" placeholder="Cari catatan..." style="flex: 1; min-width: 200px; padding: 8px; background: var(--bg-card); border: 2px solid var(--border-pixel); color: var(--text-primary); border-radius: 2px;">
+    </div>
+
+    <div class="grid grid-3" style="margin-bottom: 20px;">
+      <div class="stat-card">
+        <div class="stat-value" id="totalNotes">0</div>
+        <div class="stat-label">Total Catatan</div>
+      </div>
+    </div>
+
+    <div class="grid grid-3" id="notesGrid">
+      <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-muted);">
+        Belum ada catatan. Buat yang baru untuk mulai! ✍️
+      </div>
+    </div>
+  </div>
+
+  <div id="noteModal" class="modal">
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeNoteModal()">&times;</button>
+      <h3 style="margin-bottom: 20px;">✍️ CATATAN</h3>
+      <form onsubmit="handleSaveNote(event)">
+        <div class="form-group">
+          <label class="form-label">JUDUL</label>
+          <input type="text" id="noteTitle" class="form-input" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">KATEGORI</label>
+          <select id="noteCategory" class="form-input" required>
+            <option value="General">General</option>
+            <option value="Matematika">Matematika</option>
+            <option value="Biologi">Biologi</option>
+            <option value="Fisika">Fisika</option>
+            <option value="Kimia">Kimia</option>
+            <option value="Bahasa">Bahasa</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">ISI</label>
+          <textarea id="noteContent" class="form-input" rows="6" style="resize: none;"></textarea>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+          <button type="submit" class="btn-pixel green">✓ SIMPAN</button>
+          <button type="button" class="btn-pixel" onclick="closeNoteModal()">✗ BATAL</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/storage.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    let currentNoteId = null;
+
+    function initNotesPage() {
+      if (!requireLogin()) return;
+      renderNotes(getAllNotes());
+      updateStats();
+    }
+
+    function renderNotes(notes) {
+      const grid = document.getElementById('notesGrid');
+      if (notes.length === 0) {
+        grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-muted);">Belum ada catatan. Buat yang baru! ✍️</div>';
+        return;
+      }
+
+      grid.innerHTML = notes.map(n => `
+        <div class="pixel-card hoverable">
+          <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+            <h4 style="margin: 0; flex: 1;">${n.title}</h4>
+            <button class="btn-pixel small red" onclick="deleteNoteConfirm('${n.id}')">🗑️</button>
+          </div>
+          <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">${n.category}</div>
+          <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; max-height: 60px; overflow: hidden;">${n.content.substring(0, 100)}...</div>
+          <div style="display: flex; gap: 8px; justify-content: space-between;">
+            <button class="btn-pixel small cyan" onclick="editNote('${n.id}')">✏️ EDIT</button>
+            <span style="font-size: 10px; color: var(--text-muted);">${new Date(n.updatedAt).toLocaleDateString('id-ID')}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function createNewNote() {
+      currentNoteId = null;
+      document.getElementById('noteTitle').value = '';
+      document.getElementById('noteContent').value = '';
+      document.getElementById('noteCategory').value = 'General';
+      document.getElementById('noteModal').classList.add('active');
+    }
+
+    function editNote(noteId) {
+      currentNoteId = noteId;
+      const note = getAllNotes().find(n => n.id === noteId);
+      if (note) {
+        document.getElementById('noteTitle').value = note.title;
+        document.getElementById('noteContent').value = note.content;
+        document.getElementById('noteCategory').value = note.category;
+        document.getElementById('noteModal').classList.add('active');
+      }
+    }
+
+    function closeNoteModal() {
+      document.getElementById('noteModal').classList.remove('active');
+    }
+
+    function handleSaveNote(e) {
+      e.preventDefault();
+      const title = document.getElementById('noteTitle').value;
+      const content = document.getElementById('noteContent').value;
+      const category = document.getElementById('noteCategory').value;
+
+      if (currentNoteId) {
+        updateNote(currentNoteId, { title, content, category });
+      } else {
+        const newNote = createNote(title, content, category);
+        addNote(newNote);
+      }
+
+      closeNoteModal();
+      renderNotes(getAllNotes());
+      updateStats();
+    }
+
+    function deleteNoteConfirm(noteId) {
+      if (confirm('Yakin ingin menghapus catatan ini?')) {
+        deleteNote(noteId);
+        renderNotes(getAllNotes());
+        updateStats();
+      }
+    }
+
+    function updateStats() {
+      document.getElementById('totalNotes').textContent = getAllNotes().length;
+    }
+
+    document.getElementById('searchNotes')?.addEventListener('input', (e) => {
+      renderNotes(searchNotes(e.target.value));
+    });
+
+    window.addEventListener('load', initNotesPage);
+  </script>
+</body>
+</html>
