@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NovaMind - Profile</title>
+  <link rel="stylesheet" href="css/global.css">
+  <link rel="stylesheet" href="css/pixel.css">
+  <link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+  <div class="sidebar">
+    <div class="sidebar-logo">🌌 NOVAMIND</div>
+    <nav class="sidebar-nav">
+      <a href="dashboard.html" class="nav-link">🏠 HOME</a>
+      <a href="quest.html" class="nav-link">⚔️ QUEST LOG</a>
+      <a href="notes.html" class="nav-link">📝 NOTES</a>
+      <a href="profile.html" class="nav-link active">👤 PROFILE</a>
+    </nav>
+    <div class="sidebar-settings">
+      <button class="btn-pixel small" onclick="logout()">LOGOUT</button>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="page-header">
+      <div class="page-title">👤 PLAYER PROFILE</div>
+    </div>
+
+    <div class="pixel-box" style="text-align: center; margin-bottom: 40px;">
+      <div style="font-size: 80px; margin-bottom: 20px;">🎮</div>
+      <h2 id="playerName" style="margin: 0;">-</h2>
+      <div style="color: var(--text-secondary); margin-bottom: 20px;">
+        <span id="playerKelas">-</span> • <span id="playerJurusan">-</span>
+      </div>
+      
+      <div style="background: var(--bg-elevated); padding: 20px; border-radius: 4px; margin-bottom: 20px;">
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; text-align: left;">
+          <div>
+            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">LEVEL</div>
+            <div class="font-pixel" style="font-size: 24px; color: var(--color-purple);" id="playerLevel">1</div>
+          </div>
+          <div>
+            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">STREAK</div>
+            <div class="font-pixel" style="font-size: 24px; color: var(--color-amber);" id="playerStreak">0</div>
+          </div>
+          <div>
+            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">BEST STREAK</div>
+            <div class="font-pixel" style="font-size: 24px; color: var(--color-green);" id="bestStreak">0</div>
+          </div>
+          <div>
+            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">BADGES</div>
+            <div class="font-pixel" style="font-size: 24px; color: var(--color-cyan);" id="badgeCount">0</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="text-align: left; margin-bottom: 20px;">
+        <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">XP PROGRESS</div>
+        <div class="xp-bar-track">
+          <div class="xp-bar-fill" id="xpBar" style="width: 0%"></div>
+        </div>
+        <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;" id="xpText">0 / 100 XP</div>
+      </div>
+
+      <div style="background: var(--bg-card); padding: 16px; border-radius: 4px; border: 2px solid var(--border-pixel);">
+        <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">STATISTIK</div>
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; font-size: 13px;">
+          <div>✅ Tugas Selesai: <strong id="completedTasks">0</strong></div>
+          <div>📝 Total Catatan: <strong id="totalNotes">0</strong></div>
+          <div>⏱️ Total Belajar: <strong id="studyTime">0h</strong></div>
+          <div>📅 Bergabung: <strong id="joinDate">-</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <h3 style="margin-bottom: 16px;">⚙️ PENGATURAN</h3>
+    <div class="pixel-box">
+      <div style="margin-bottom: 20px;">
+        <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">TEMA</div>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn-pixel" onclick="setTheme('dark')">🌙 Dark</button>
+          <button class="btn-pixel" onclick="setTheme('light')">☀️ Light</button>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div style="margin-top: 20px;">
+        <button class="btn-pixel red" onclick="clearAllDataConfirm()">⚠️ HAPUS SEMUA DATA</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/storage.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    function initProfilePage() {
+      if (!requireLogin()) return;
+      const user = getUser();
+      updateStreak();
+
+      document.getElementById('playerName').textContent = user.username;
+      document.getElementById('playerKelas').textContent = `Kelas ${user.kelas}`;
+      document.getElementById('playerJurusan').textContent = user.jurusan;
+      document.getElementById('playerLevel').textContent = user.stats.level;
+      document.getElementById('playerStreak').textContent = user.stats.streak;
+      document.getElementById('bestStreak').textContent = user.stats.longestStreak;
+      document.getElementById('badgeCount').textContent = user.badges.length;
+
+      const nextLevel = LEVEL_TABLE.find(l => l.level === user.stats.level + 1);
+      const xpPercent = (user.stats.xp / (nextLevel?.xpRequired || 100)) * 100;
+      document.getElementById('xpBar').style.width = xpPercent + '%';
+      document.getElementById('xpText').textContent = `${user.stats.xp} / ${nextLevel?.xpRequired || 100} XP`;
+
+      document.getElementById('completedTasks').textContent = user.stats.completedTasks;
+      document.getElementById('totalNotes').textContent = user.stats.totalNotes;
+      document.getElementById('studyTime').textContent = (user.stats.totalStudyMinutes / 60).toFixed(1) + 'h';
+      document.getElementById('joinDate').textContent = new Date(user.joinDate).toLocaleDateString('id-ID');
+    }
+
+    function setTheme(theme) {
+      document.body.className = theme === 'light' ? 'light' : '';
+    }
+
+    function clearAllDataConfirm() {
+      if (confirm('⚠️ Ini akan menghapus SEMUA data Anda. Yakin?')) {
+        if (confirm('Serius? Ini tidak bisa dibatalkan!')) {
+          clearAllData();
+          logout();
+        }
+      }
+    }
+
+    window.addEventListener('load', initProfilePage);
+  </script>
+</body>
+</html>
